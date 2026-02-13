@@ -25,11 +25,14 @@ pub struct RunArgs {
     #[arg(long, short, default_value = ".")]
     pub output_dir: PathBuf,
 
-    #[arg(long, short = 'e')]
+    #[arg(long, short)]
     pub ensure_output: bool,
 
     #[arg(long, short = 'x')]
     pub remove_input: bool,
+
+    #[arg(long, short)]
+    pub zip_output: bool,
 }
 
 #[derive(Subcommand, Debug)]

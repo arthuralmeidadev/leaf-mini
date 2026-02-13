@@ -3,7 +3,76 @@ use std::{fs, path::PathBuf, process::exit};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-pub struct PipelineConfig {}
+pub enum ImageCompression {
+    Lossy,
+    Lossless,
+}
+
+#[derive(Deserialize)]
+pub enum ImageTransform {
+    Crop(Option<f64>, Option<f64>),
+    Resize(Option<f64>, Option<f64>),
+}
+
+#[derive(Deserialize)]
+pub enum ImageFormat {
+    PNG,
+    JPG,
+    TIFF,
+    BITMAP,
+}
+
+#[derive(Deserialize)]
+pub enum AudioFormat {
+    MP3,
+    M4A,
+    WAV,
+    OGG,
+}
+
+#[derive(Deserialize)]
+pub struct GeneralImageSettings {
+    pub compression: ImageCompression,
+    pub transform: Option<ImageTransform>,
+    pub convert_to: Option<ImageFormat>,
+}
+
+#[derive(Deserialize)]
+pub struct FormatSpecificImageSettings {
+    pub format: ImageFormat,
+    pub compression: ImageCompression,
+    pub transform: Option<ImageTransform>,
+    pub convert_to: Option<ImageFormat>,
+}
+
+#[derive(Deserialize)]
+pub struct ImageSettings {
+    pub general: GeneralImageSettings,
+    pub format_specific_settings: Option<Vec<FormatSpecificImageSettings>>,
+}
+
+#[derive(Deserialize)]
+pub enum FileEncryptionAlgorithm {
+    RSA2048,
+    RSA4096,
+    ED25519,
+}
+
+#[derive(Deserialize)]
+pub struct EncryptionSettings {
+    pub algorithm: FileEncryptionAlgorithm,
+    pub public_key: String,
+}
+
+#[derive(Deserialize)]
+pub enum FileIdentity {}
+
+#[derive(Deserialize)]
+pub struct PipelineConfig {
+    pub create_subdirectories: bool,
+    pub image_settings: Option<ImageSettings>,
+    pub encryption_settings: Option<EncryptionSettings>,
+}
 
 impl PipelineConfig {
     pub fn read_config(path: PathBuf) -> Self {

@@ -1,8 +1,17 @@
 pub mod config;
+pub mod loader;
+pub mod processor;
 
-use std::{fs, process::exit};
+use std::{
+    fs,
+    process::exit,
+    sync::{Arc, mpsc},
+};
 
-use crate::{cli::RunArgs, pipeline::config::PipelineConfig};
+use crate::{
+    cli::RunArgs,
+    pipeline::{config::PipelineConfig, processor::ProcessData},
+};
 
 pub fn call_run(run_args: RunArgs) {
     if !run_args.config.is_file() {
@@ -47,5 +56,24 @@ pub fn call_run(run_args: RunArgs) {
             .expect("Error while creating path to output directory");
     }
 
-    let pipeline_config = PipelineConfig::read_config(run_args.config);
+    let Ok(file_entries) = loader::load_file_entries(&run_args.input_dir) else {
+        exit(1)
+    };
+
+    let pipeline_config = Arc::new(PipelineConfig::read_config(run_args.config));
+    use rayon::prelude::*;
+
+    let (tx, rx) = mpsc::channel();
+
+    file_entries.par_iter().for_each(|entry| {
+        let _ = tx.clone().send(
+            entry
+                .get_processor(Arc::clone(&pipeline_config))
+                .process_data(),
+        );
+    });
+
+    drop(tx);
+
+    let _: Vec<_> = rx.iter().collect();
 }
