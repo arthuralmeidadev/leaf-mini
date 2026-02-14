@@ -56,22 +56,22 @@ pub fn call_run(run_args: RunArgs) {
             .expect("Error while creating path to output directory");
     }
 
-    let Ok(file_entries) = loader::load_file_entries(&run_args.input_dir) else {
+    use rayon::prelude::*;
+
+    let pipeline_config = PipelineConfig::read_config(run_args.config);
+    let Ok(file_processors) =
+        loader::load_file_processors(&run_args.input_dir, Arc::new(pipeline_config))
+    else {
         exit(1)
     };
 
-    let pipeline_config = Arc::new(PipelineConfig::read_config(run_args.config));
-    use rayon::prelude::*;
-
     let (tx, rx) = mpsc::channel();
 
-    file_entries.par_iter().for_each(|entry| {
-        let _ = tx.clone().send(
-            entry
-                .get_processor(Arc::clone(&pipeline_config))
-                .process_data(),
-        );
-    });
+    file_processors
+        .par_iter()
+        .for_each(|processor: &Box<dyn ProcessData + Send + Sync>| {
+            let _ = tx.clone().send(processor.process_data());
+        });
 
     drop(tx);
 

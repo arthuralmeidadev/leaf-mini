@@ -1,15 +1,11 @@
-use std::{error::Error, sync::Arc};
+use std::{error::Error, path::PathBuf, sync::Arc};
 
-use crate::pipeline::{
-    config::PipelineConfig,
-    loader::FileEntry,
-    processor::{CreateFileProcessor, ProcessData},
-};
+use crate::pipeline::{config::PipelineConfig, processor::ProcessData};
 
 pub struct ImageProcessor;
 
-impl CreateFileProcessor for ImageProcessor {
-    fn new(file_entry: FileEntry, config: Arc<PipelineConfig>) -> Self {
+impl ImageProcessor {
+    pub fn new(path: PathBuf, config: Arc<PipelineConfig>) -> Self {
         todo!()
     }
 }
