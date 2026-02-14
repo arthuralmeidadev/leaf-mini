@@ -11,22 +11,22 @@ pub trait ProcessData {
 }
 
 impl FileProcessor {
-    pub fn new(path: PathBuf, config: Arc<PipelineConfig>) -> Option<Box<dyn ProcessData + Send + Sync>> {
-        let Some(Some(ext)) = path
+    pub fn new(
+        path: PathBuf,
+        config: Arc<PipelineConfig>,
+    ) -> Option<Box<dyn ProcessData + Send + Sync>> {
+        let ext = path
             .extension()
-            .and_then(|ext| Some(ext.to_str().and_then(|ext| Some(ext.to_lowercase()))))
-        else {
-            return None;
-        };
+            .and_then(|ext| Some(ext.to_str().and_then(|ext| Some(ext.to_lowercase()))))??;
 
         match ext.as_str() {
             "png" | "jpeg" | "jpg" | "tiff" | "bmp" => {
-                Some(Box::new(ImageProcessor::new(path, config)))
+                Some(Box::new(ImageProcessor::new(path, config, &ext)))
             }
-            "mp3" | "m4a" | "wav" | "ogg" => None,
-            "json" => None,
-            "csv" => None,
-            _ => None,
+            "mp3" | "m4a" | "wav" | "ogg" => todo!(),
+            "json" => todo!(),
+            "csv" => todo!(),
+            _ => todo!(),
         }
     }
 }
