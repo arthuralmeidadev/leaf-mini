@@ -1,5 +1,4 @@
 pub mod config;
-pub mod loader;
 pub mod processor;
 
 use std::{
@@ -59,11 +58,9 @@ pub fn call_run(run_args: RunArgs) {
     use rayon::prelude::*;
 
     let pipeline_config = PipelineConfig::read_config(run_args.config);
-    let Ok(file_processors) =
-        loader::load_file_processors(&run_args.input_dir, Arc::new(pipeline_config))
-    else {
-        exit(1)
-    };
+    let file_processors =
+        processor::build_file_processors(&run_args.input_dir, Arc::new(pipeline_config))
+            .unwrap_or_else(|_| exit(1));
 
     let (tx, rx) = mpsc::channel();
 
