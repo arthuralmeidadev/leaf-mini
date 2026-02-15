@@ -1,4 +1,6 @@
-use std::{io::Error, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
+
+use anyhow::Result;
 
 use crate::pipeline::{
     config::PipelineConfig,
@@ -8,7 +10,7 @@ use crate::pipeline::{
 pub fn load_file_processors(
     input_dir: &PathBuf,
     config: Arc<PipelineConfig>,
-) -> Result<Vec<Box<dyn ProcessData + Send + Sync>>, Error> {
+) -> Result<Vec<Box<dyn ProcessData + Send + Sync>>> {
     let entries = input_dir.read_dir()?;
 
     Ok(entries

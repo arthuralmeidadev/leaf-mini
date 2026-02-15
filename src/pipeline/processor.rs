@@ -1,13 +1,15 @@
 pub mod image_processor;
 
-use std::{error::Error, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
+
+use anyhow::Result;
 
 use crate::pipeline::{config::PipelineConfig, processor::image_processor::ImageProcessor};
 
 pub struct FileProcessor;
 
 pub trait ProcessData {
-    fn process_data(&self) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>>;
+    fn process_data(&self) -> Result<Vec<u8>>;
 }
 
 impl FileProcessor {

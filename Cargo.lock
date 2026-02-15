@@ -554,6 +554,7 @@ dependencies = [
 name = "leaf-mini"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap",
  "image",
  "rayon",

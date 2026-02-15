@@ -17,7 +17,7 @@ pub enum ImageTransform {
 #[derive(Deserialize)]
 pub enum ImageFormat {
     PNG,
-    JPG,
+    JPEG,
     TIFF,
     BITMAP,
 }
