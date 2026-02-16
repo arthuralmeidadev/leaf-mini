@@ -1,10 +1,10 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{io::Cursor, path::PathBuf, sync::Arc};
 
 use anyhow::{Context, Result};
-use image::{DynamicImage, ImageFormat, ImageReader};
+use image::{DynamicImage, ImageFormat, ImageReader, codecs::jpeg::JpegEncoder};
 
 use crate::pipeline::{
-    config::{FormatSpecificImageSettings, ImageFormat as ConfigImageFormat, PipelineConfig},
+    config::{ImageCompression, ImageFormat as ConfigImageFormat, ImageTransform, PipelineConfig},
     processor::ProcessData,
 };
 
@@ -34,36 +34,63 @@ impl ImageProcessor {
         Ok(ImageReader::open(&self.path)?.decode()?)
     }
 
-    fn handle_png(&self, img: DynamicImage) {
-        todo!()
-    }
+    fn handle_image(
+        &self,
+        img: DynamicImage,
+        compression: &ImageCompression,
+        transform: Option<&ImageTransform>,
+        convert_to: Option<&ConfigImageFormat>,
+    ) -> Result<Vec<u8>> {
+        let mut output_bytes = Vec::new();
 
-    fn handle_jpeg(&self, img: DynamicImage, settings: &FormatSpecificImageSettings) {}
+        if matches!(compression, ImageCompression::Lossy) {
+            let cursor = Cursor::new(&mut output_bytes);
+            let encoder = JpegEncoder::new_with_quality(cursor, 75u8);
+
+            img.write_with_encoder(encoder)?;
+        }
+
+        Ok(output_bytes)
+    }
 }
 
 impl ProcessData for ImageProcessor {
     fn process_data(&self) -> Result<Vec<u8>> {
         let img = self.read_dynamic_image()?;
+        let image_settings = self.config.image_settings.as_ref().context("")?;
+        let default_settings = &image_settings.general;
+        let specific_settings =
+            image_settings
+                .format_specific_settings
+                .as_ref()
+                .and_then(|format_specific_settings| {
+                    format_specific_settings.iter().find(|specific_settings| {
+                        match (&specific_settings.format, self.format) {
+                            (ConfigImageFormat::PNG, ImageFormat::Png)
+                            | (ConfigImageFormat::JPEG, ImageFormat::Jpeg)
+                            | (ConfigImageFormat::TIFF, ImageFormat::Tiff)
+                            | (ConfigImageFormat::BITMAP, ImageFormat::Bmp) => true,
+                            _ => false,
+                        }
+                    })
+                });
 
-        if let Some(format_specific_settings) = self
-            .config
-            .image_settings
-            .as_ref()
-            .and_then(|image_settings| image_settings.format_specific_settings.as_ref())
-        {
-            match self.format {
-                ImageFormat::Png => self.handle_png(img),
-                ImageFormat::Jpeg | _ => {
-                    let jpeg_settings = format_specific_settings
-                        .iter()
-                        .find(|setting| matches!(setting.format, ConfigImageFormat::JPEG))
-                        .context("No settings for jpeg type.")?;
-
-                    self.handle_jpeg(img, jpeg_settings);
-                }
-            }
+        let (compression, transform, convert_to) = match specific_settings {
+            Some(settings) => (
+                &settings.compression,
+                &settings.transform,
+                &settings.convert_to,
+            ),
+            None => (
+                &default_settings.compression,
+                &default_settings.transform,
+                &default_settings.convert_to,
+            ),
         };
 
-        Ok(vec![])
+        let result =
+            self.handle_image(img, compression, transform.as_ref(), convert_to.as_ref())?;
+
+        Ok(result)
     }
 }
