@@ -43,7 +43,9 @@ impl ImageProcessor {
     ) -> Result<Vec<u8>> {
         let mut output_bytes = Vec::new();
 
-        if matches!(compression, ImageCompression::Lossy) {
+        if matches!(compression, ImageCompression::Lossy)
+            && matches!(self.format, ImageFormat::Jpeg)
+        {
             let cursor = Cursor::new(&mut output_bytes);
             let encoder = JpegEncoder::new_with_quality(cursor, 75u8);
 
